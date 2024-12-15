@@ -5,24 +5,22 @@ import {
   getPaginationVariables,
   getSeoMeta,
 } from "@shopify/hydrogen";
-import type {
-  ProductCollectionSortKeys,
-  ProductFilter,
-} from "@shopify/hydrogen/storefront-api-types";
+import type { ProductFilter } from "@shopify/hydrogen/storefront-api-types";
 import {
-  json,
   type LoaderFunctionArgs,
   type MetaArgs,
+  json,
   redirect,
 } from "@shopify/remix-oxygen";
+import type { CollectionDetailsQuery } from "storefrontapi.generated";
 import invariant from "tiny-invariant";
 import { routeHeaders } from "~/data/cache";
 import { COLLECTION_QUERY } from "~/data/queries";
-import { PAGINATION_SIZE } from "~/lib/const";
+import { getSortValuesFromParam } from "~/lib/collections";
+import { FILTER_URL_PREFIX, PAGINATION_SIZE } from "~/lib/const";
+import type { SortParam } from "~/lib/filter";
 import { seoPayload } from "~/lib/seo.server";
 import { parseAsCurrency } from "~/lib/utils";
-import type { SortParam } from "~/modules/sort-filter";
-import { FILTER_URL_PREFIX } from "~/modules/sort-filter";
 import { WeaverseContent } from "~/weaverse";
 
 export let headers = routeHeaders;
@@ -39,7 +37,7 @@ export async function loader({ params, request, context }: LoaderFunctionArgs) {
   let searchParams = new URL(request.url).searchParams;
 
   let { sortKey, reverse } = getSortValuesFromParam(
-    searchParams.get("sort") as SortParam
+    searchParams.get("sort") as SortParam,
   );
   let filters = [...searchParams.entries()].reduce((filters, [key, value]) => {
     if (key.startsWith(FILTER_URL_PREFIX)) {
@@ -52,7 +50,7 @@ export async function loader({ params, request, context }: LoaderFunctionArgs) {
   }, [] as ProductFilter[]);
 
   let { collection, collections } = await context.storefront
-    .query(COLLECTION_QUERY, {
+    .query<CollectionDetailsQuery>(COLLECTION_QUERY, {
       variables: {
         ...paginationVariables,
         handle: collectionHandle,
@@ -61,6 +59,9 @@ export async function loader({ params, request, context }: LoaderFunctionArgs) {
         reverse,
         country: context.storefront.i18n.country,
         language: context.storefront.i18n.language,
+        // Query custom banner stored in Shopify's collection metafields
+        customBannerNamespace: "custom",
+        customBannerKey: "collection_banner",
       },
     })
     .catch((e) => {
@@ -83,7 +84,7 @@ export async function loader({ params, request, context }: LoaderFunctionArgs) {
   let seo = seoPayload.collection({ collection, url: request.url });
 
   let allFilterValues = collection.products.filters.flatMap(
-    (filter) => filter.values
+    (filter) => filter.values,
   );
 
   let appliedFilters = filters
@@ -132,6 +133,7 @@ export async function loader({ params, request, context }: LoaderFunctionArgs) {
   return json({
     collection,
     appliedFilters,
+    // @ts-ignore
     collections: flattenConnection(collections),
     seo,
     weaverseData: await context.weaverse.loadPage({
@@ -160,42 +162,4 @@ export default function Collection() {
       />
     </>
   );
-}
-
-export function getSortValuesFromParam(sortParam: SortParam | null): {
-  sortKey: ProductCollectionSortKeys;
-  reverse: boolean;
-} {
-  switch (sortParam) {
-    case "price-high-low":
-      return {
-        sortKey: "PRICE",
-        reverse: true,
-      };
-    case "price-low-high":
-      return {
-        sortKey: "PRICE",
-        reverse: false,
-      };
-    case "best-selling":
-      return {
-        sortKey: "BEST_SELLING",
-        reverse: false,
-      };
-    case "newest":
-      return {
-        sortKey: "CREATED",
-        reverse: true,
-      };
-    case "featured":
-      return {
-        sortKey: "MANUAL",
-        reverse: false,
-      };
-    default:
-      return {
-        sortKey: "RELEVANCE",
-        reverse: false,
-      };
-  }
 }

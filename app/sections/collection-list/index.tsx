@@ -52,7 +52,7 @@ let CollectionList = forwardRef<HTMLElement, CollectionListProps>(
         </Pagination>
       </Section>
     );
-  }
+  },
 );
 
 export default CollectionList;
@@ -61,6 +61,7 @@ export let schema: HydrogenComponentSchema = {
   type: "collection-list",
   title: "Collection list",
   limit: 1,
+  childTypes: ["subheading", "heading", "paragraph", "collections-items"],
   enabledOn: {
     pages: ["COLLECTION_LIST"],
   },
@@ -105,7 +106,6 @@ export let schema: HydrogenComponentSchema = {
               { value: "1/1", label: "1/1" },
               { value: "3/4", label: "3/4" },
               { value: "4/3", label: "4/3" },
-              { value: "6/4", label: "6/4" },
             ],
           },
           defaultValue: "auto",

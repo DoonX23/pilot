@@ -14,29 +14,25 @@ import {
   useRouteLoaderData,
 } from "@remix-run/react";
 import type { SeoConfig } from "@shopify/hydrogen";
-import {
-  Analytics,
-  getSeoMeta,
-  getShopAnalytics,
-  useNonce,
-} from "@shopify/hydrogen";
+import { Analytics, getSeoMeta, useNonce } from "@shopify/hydrogen";
 import type {
-  AppLoadContext,
   LinksFunction,
   LoaderFunctionArgs,
   MetaArgs,
 } from "@shopify/remix-oxygen";
 import { defer } from "@shopify/remix-oxygen";
-import { withWeaverse } from "@weaverse/hydrogen";
-import invariant from "tiny-invariant";
-import { seoPayload } from "~/lib/seo.server";
-import { Layout as PageLayout } from "~/modules/layout";
-import { CustomAnalytics } from "~/modules/custom-analytics";
-import { GlobalLoading } from "~/modules/global-loading";
-import { TooltipProvider } from "./components/tooltip";
-import { DEFAULT_LOCALE, parseMenu } from "./lib/utils";
-import { GenericError } from "./modules/generic-error";
-import { NotFound } from "./modules/not-found";
+import { useThemeSettings, withWeaverse } from "@weaverse/hydrogen";
+import type { CSSProperties } from "react";
+import { Footer } from "~/components/layout/footer";
+import { Header } from "~/components/layout/header";
+import { CustomAnalytics } from "~/components/root/custom-analytics";
+import { GlobalLoading } from "~/components/root/global-loading";
+import { TooltipProvider } from "~/components/tooltip";
+import { ScrollingAnnouncement } from "./components/layout/scrolling-announcement";
+import { GenericError } from "./components/root/generic-error";
+import { NotFound } from "./components/root/not-found";
+import { loadCriticalData, loadDeferredData } from "./lib/root";
+import { DEFAULT_LOCALE } from "./lib/utils";
 import styles from "./styles/app.css?url";
 import { GlobalStyle } from "./weaverse/style";
 
@@ -93,10 +89,10 @@ export let links: LinksFunction = () => {
 
 export async function loader(args: LoaderFunctionArgs) {
   // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
+  let deferredData = loadDeferredData(args);
 
   // Await the critical data required to render initial state of the page
-  const criticalData = await loadCriticalData(args);
+  let criticalData = await loadCriticalData(args);
 
   return defer({
     ...deferredData,
@@ -104,59 +100,15 @@ export async function loader(args: LoaderFunctionArgs) {
   });
 }
 
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- */
-async function loadCriticalData({ request, context }: LoaderFunctionArgs) {
-  const [layout] = await Promise.all([
-    getLayoutData(context),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
-
-  const seo = seoPayload.root({ shop: layout.shop, url: request.url });
-
-  const { storefront, env } = context;
-
-  return {
-    layout,
-    seo,
-    shop: getShopAnalytics({
-      storefront,
-      publicStorefrontId: env.PUBLIC_STOREFRONT_ID,
-    }),
-    consent: {
-      checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN,
-      storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
-    },
-    selectedLocale: storefront.i18n,
-    weaverseTheme: await context.weaverse.loadThemeSettings(),
-    googleGtmID: context.env.PUBLIC_GOOGLE_GTM_ID,
-  };
-}
-
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- */
-function loadDeferredData({ context }: LoaderFunctionArgs) {
-  const { cart, customerAccount } = context;
-
-  return {
-    isLoggedIn: customerAccount.isLoggedIn(),
-    cart: cart.get(),
-  };
-}
-
-export const meta = ({ data }: MetaArgs<typeof loader>) => {
+export let meta = ({ data }: MetaArgs<typeof loader>) => {
   return getSeoMeta(data?.seo as SeoConfig);
 };
 
 function Layout({ children }: { children?: React.ReactNode }) {
-  const nonce = useNonce();
-  const data = useRouteLoaderData<RootLoader>("root");
-  const locale = data?.selectedLocale ?? DEFAULT_LOCALE;
+  let nonce = useNonce();
+  let data = useRouteLoaderData<RootLoader>("root");
+  let locale = data?.selectedLocale ?? DEFAULT_LOCALE;
+  let { topbarHeight, topbarText } = useThemeSettings();
 
   return (
     <html lang={locale.language}>
@@ -168,8 +120,13 @@ function Layout({ children }: { children?: React.ReactNode }) {
         <GlobalStyle />
       </head>
       <body
-        style={{ opacity: 0 }}
-        className="transition-opacity !opacity-100 duration-300"
+        style={
+          {
+            opacity: 0,
+            "--initial-topbar-height": `${topbarText ? topbarHeight : 0}px`,
+          } as CSSProperties
+        }
+        className="transition-opacity !opacity-100 duration-300 antialiased bg-background text-body"
       >
         {data ? (
           <Analytics.Provider
@@ -178,12 +135,22 @@ function Layout({ children }: { children?: React.ReactNode }) {
             consent={data.consent}
           >
             <TooltipProvider disableHoverableContent>
-              <PageLayout
+              <div
+                className="flex flex-col min-h-screen"
                 key={`${locale.language}-${locale.country}`}
-                layout={data.layout}
               >
-                {children}
-              </PageLayout>
+                <div className="">
+                  <a href="#mainContent" className="sr-only">
+                    Skip to content
+                  </a>
+                </div>
+                <ScrollingAnnouncement />
+                <Header />
+                <main id="mainContent" className="flex-grow">
+                  {children}
+                </main>
+                <Footer />
+              </div>
             </TooltipProvider>
             <CustomAnalytics />
           </Analytics.Provider>
@@ -209,8 +176,8 @@ function App() {
 export default withWeaverse(App);
 
 export function ErrorBoundary({ error }: { error: Error }) {
-  const routeError = useRouteError();
-  const isRouteError = isRouteErrorResponse(routeError);
+  let routeError: { status?: number; data?: any } = useRouteError();
+  let isRouteError = isRouteErrorResponse(routeError);
 
   let pageType = "page";
 
@@ -235,129 +202,4 @@ export function ErrorBoundary({ error }: { error: Error }) {
       )}
     </Layout>
   );
-}
-
-const LAYOUT_QUERY = `#graphql
-  query layout(
-    $language: LanguageCode
-    $headerMenuHandle: String!
-    $footerMenuHandle: String!
-  ) @inContext(language: $language) {
-    shop {
-      ...Shop
-    }
-    headerMenu: menu(handle: $headerMenuHandle) {
-      ...Menu
-    }
-    footerMenu: menu(handle: $footerMenuHandle) {
-      ...Menu
-    }
-  }
-  fragment Shop on Shop {
-    id
-    name
-    description
-    primaryDomain {
-      url
-    }
-    brand {
-      logo {
-        image {
-          url
-        }
-      }
-    }
-  }
-  fragment MenuItem on MenuItem {
-    id
-    resourceId
-    resource {
-      ... on Collection {
-        image {
-          altText
-          height
-          id
-          url
-          width
-        }
-      }
-      ... on Product {
-        image: featuredImage {
-          altText
-          height
-          id
-          url
-          width
-        }
-      }
-    }
-    tags
-    title
-    type
-    url
-  }
-
-  fragment ChildMenuItem on MenuItem {
-    ...MenuItem
-  }
-  fragment ParentMenuItem2 on MenuItem {
-    ...MenuItem
-    items {
-      ...ChildMenuItem
-    }
-  }
-  fragment ParentMenuItem on MenuItem {
-    ...MenuItem
-    items {
-      ...ParentMenuItem2
-    }
-  }
-  fragment Menu on Menu {
-    id
-    items {
-      ...ParentMenuItem
-    }
-  }
-` as const;
-
-async function getLayoutData({ storefront, env }: AppLoadContext) {
-  const data = await storefront.query(LAYOUT_QUERY, {
-    variables: {
-      headerMenuHandle: "main-menu",
-      footerMenuHandle: "footer",
-      language: storefront.i18n.language,
-    },
-  });
-
-  invariant(data, "No data returned from Shopify API");
-
-  /*
-      Modify specific links/routes (optional)
-      @see: https://shopify.dev/api/storefront/unstable/enums/MenuItemType
-      e.g here we map:
-        - /blogs/news -> /news
-        - /blog/news/blog-post -> /news/blog-post
-        - /collections/all -> /products
-    */
-  let customPrefixes = { CATALOG: "products" };
-
-  const headerMenu = data?.headerMenu
-    ? parseMenu(
-        data.headerMenu,
-        data.shop.primaryDomain.url,
-        env,
-        customPrefixes,
-      )
-    : undefined;
-
-  const footerMenu = data?.footerMenu
-    ? parseMenu(
-        data.footerMenu,
-        data.shop.primaryDomain.url,
-        env,
-        customPrefixes,
-      )
-    : undefined;
-
-  return { shop: data.shop, headerMenu, footerMenu };
 }

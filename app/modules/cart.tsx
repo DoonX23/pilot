@@ -1,3 +1,4 @@
+import { Trash } from "@phosphor-icons/react";
 import {
   CartForm,
   Image,
@@ -15,9 +16,8 @@ import clsx from "clsx";
 import { useRef } from "react";
 import useScroll from "react-use/esm/useScroll";
 import type { CartApiQueryFragment } from "storefrontapi.generated";
+import { Button } from "~/components/button";
 import { Link } from "~/components/link";
-import Button from "~/components/button";
-import { IconTrash } from "~/components/icons";
 import { getImageAspectRatio } from "~/lib/utils";
 import { Text } from "~/modules/text";
 import { CartBestSellers } from "./cart-best-sellers";
@@ -55,7 +55,7 @@ export function CartDetails({
     <div
       className={clsx(
         layout === "drawer" &&
-          "grid grid-cols-1 h-screen-no-nav grid-rows-[1fr_auto] w-[400px]",
+          "grid grid-cols-1 h-screen-no-nav grid-rows-[1fr_auto] px-4",
         layout === "page" && [
           "pb-12 w-full max-w-page mx-auto",
           "grid md:grid-cols-2 lg:grid-cols-3 md:items-start",
@@ -96,10 +96,7 @@ function CartDiscounts({
           <div className="flex items-center justify-between">
             <UpdateDiscountForm>
               <button type="button">
-                <IconTrash
-                  aria-hidden="true"
-                  className="h-[18px] w-[18px] mr-1"
-                />
+                <Trash aria-hidden="true" className="h-[18px] w-[18px] mr-1" />
               </button>
             </UpdateDiscountForm>
             <Text as="dd">{codes?.join(", ")}</Text>
@@ -157,13 +154,13 @@ function CartLines({
   let { y } = useScroll(scrollRef);
 
   return (
-    <section
+    <div
       ref={scrollRef}
       aria-labelledby="cart-contents"
       className={clsx([
-        y > 0 ? "border-t border-line/50" : "",
+        y > 0 ? "border-t border-line-subtle" : "",
         layout === "page" && "flex-grow md:translate-y-4 lg:col-span-2",
-        layout === "drawer" && "px-5 pb-5 overflow-auto transition",
+        layout === "drawer" && "overflow-auto transition",
       ])}
     >
       <ul
@@ -177,7 +174,7 @@ function CartLines({
           <CartLineItem key={line.id} line={line} layout={layout} />
         ))}
       </ul>
-    </section>
+    </div>
   );
 }
 
@@ -194,9 +191,9 @@ function CartCheckoutActions({
       </a>
       {/* @todo: <CartShopPayButton cart={cart} /> */}
       {layout === "drawer" && (
-        <Button variant="link" link="/cart" className="w-fit mx-auto">
+        <Link variant="underline" to="/cart" className="w-fit mx-auto">
           View cart
-        </Button>
+        </Link>
       )}
     </div>
   );
@@ -212,12 +209,12 @@ function CartSummary({
   layout: Layouts;
 }) {
   return (
-    <section
+    <div
       aria-labelledby="summary-heading"
       className={clsx(
-        layout === "drawer" && "grid gap-4 p-5 border-t border-line/50",
+        layout === "drawer" && "grid gap-4 border-t border-line-subtle pt-4",
         layout === "page" &&
-          "sticky top-nav grid gap-6 p-4 md:px-6 md:translate-y-4 bg-background/5 rounded w-full",
+          "sticky top-nav grid gap-6 p-4 md:px-6 md:translate-y-4 rounded w-full",
       )}
     >
       <h2 id="summary-heading" className="sr-only">
@@ -236,7 +233,7 @@ function CartSummary({
         </div>
       </dl>
       {children}
-    </section>
+    </div>
   );
 }
 
@@ -281,7 +278,7 @@ function CartLineItem({ line, layout }: { line: CartLine; layout: Layouts }) {
             <div>
               {merchandise?.product?.handle ? (
                 <Link to={`/products/${merchandise.product.handle}`}>
-                  <span className="underline-animation">
+                  <span className="reveal-underline">
                     {merchandise?.product?.title || ""}
                   </span>
                 </Link>
@@ -339,7 +336,7 @@ function ItemRemoveButton({
         type="submit"
       >
         <span className="sr-only">Remove</span>
-        <IconTrash aria-hidden="true" className="h-4 w-4" />
+        <Trash aria-hidden="true" className="h-4 w-4" />
       </button>
       <OptimisticInput id={lineId} data={{ action: "remove" }} />
     </CartForm>
@@ -363,13 +360,13 @@ function CartLineQuantityAdjust({ line }: { line: CartLine }) {
       <label htmlFor={`quantity-${lineId}`} className="sr-only">
         Quantity, {optimisticQuantity}
       </label>
-      <div className="flex items-center border border-line/50">
+      <div className="flex items-center border border-line-subtle">
         <UpdateCartButton lines={[{ id: lineId, quantity: prevQuantity }]}>
           <button
             type="submit"
             name="decrease-quantity"
             aria-label="Decrease quantity"
-            className="w-9 h-9 transition disabled:text-body/50 disabled:cursor-not-allowed"
+            className="w-9 h-9 transition disabled:text-body-subtle disabled:cursor-not-allowed"
             value={prevQuantity}
             disabled={optimisticQuantity <= 1 || isOptimistic}
           >
@@ -388,7 +385,7 @@ function CartLineQuantityAdjust({ line }: { line: CartLine }) {
         <UpdateCartButton lines={[{ id: lineId, quantity: nextQuantity }]}>
           <button
             type="submit"
-            className="w-9 h-9 transition disabled:text-body/50 disabled:cursor-not-allowed"
+            className="w-9 h-9 transition disabled:text-body-subtle disabled:cursor-not-allowed"
             name="increase-quantity"
             value={nextQuantity}
             aria-label="Increase quantity"
@@ -487,13 +484,13 @@ export function CartEmpty({
           Looks like you haven&rsquo;t added anything yet, let&rsquo;s get you
           started!
         </p>
-        <Button
+        <Link
+          to={layout === "page" ? "/products" : ""}
           className={clsx(layout === "drawer" ? "w-full" : "min-w-48")}
-          link={layout === "page" ? "/products" : ""}
           onClick={onClose}
         >
           Start Shopping
-        </Button>
+        </Link>
       </div>
       <div className="grid gap-4">
         <CartBestSellers

@@ -1,36 +1,26 @@
-import { useLoaderData } from "@remix-run/react";
 import { useState } from "react";
-import { StarRating } from "~/modules/star-rating";
-import { ProductLoaderType } from "~/routes/($locale).products.$productHandle";
+import { StarRating } from "~/components/star-rating";
+import { JudgemeReviewsData } from "~/lib/judgeme";
 
-const reviewPerPage = 5;
+const REVIEWS_PER_PAGE = 5;
 
-export function ReviewList() {
-  const { judgemeReviews } = useLoaderData<ProductLoaderType>();
-  const pageNumber = Math.ceil(judgemeReviews.reviews.length / reviewPerPage);
-  const [page, setPage] = useState(0);
+function formatDate(dateString: string) {
+  let date = new Date(dateString);
+  return date.toLocaleDateString("en-US");
+}
 
-  const reviews = judgemeReviews.reviews.slice(
-    page * reviewPerPage,
-    (page + 1) * reviewPerPage
+export function ReviewList({
+  judgemeReviews,
+}: {
+  judgemeReviews: JudgemeReviewsData;
+}) {
+  let [page, setPage] = useState(0);
+  let pageNumber = Math.ceil(judgemeReviews.reviews.length / REVIEWS_PER_PAGE);
+
+  let reviews = judgemeReviews.reviews.slice(
+    page * REVIEWS_PER_PAGE,
+    (page + 1) * REVIEWS_PER_PAGE
   );
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-GB");
-  };
-
-  if (judgemeReviews.reviews.length === 0) {
-    return (
-      <div className="md:w-2/3 w-full py-6 flex flex-col gap-6">
-        <div className="flex flex-col gap-6">
-          <span className="font-bold text-lg uppercase">
-            Reviews (0)
-          </span>
-          <div>There are no reviews for this product yet</div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="lg:w-2/3 md:w-3/5 w-full py-6 flex flex-col gap-6">
@@ -43,11 +33,8 @@ export function ReviewList() {
           <>
             <div key={index} className="flex gap-4 flex-col md:flex-row">
               <div className="flex flex-col gap-4 md:w-1/4 w-full">
-                <div className="flex items-center">
+                <div className="flex items-center gap-0.5">
                   <StarRating rating={review.rating} />
-                  <span className="ml-1 text-sm text-gray-600">
-                    {review.rating.toFixed(1)}
-                  </span>
                 </div>
                 <div className="flex flex-col">
                   <p className="font-semibold">{review.reviewer.name}</p>
@@ -59,7 +46,9 @@ export function ReviewList() {
                   <p className="font-bold">{review.title}</p>
                   <p>{formatDate(review.created_at)}</p>
                 </div>
-                <p className=" font-normal text-base line-clamp-4">{review.body}</p>
+                <p className=" font-normal text-base line-clamp-4">
+                  {review.body}
+                </p>
               </div>
             </div>
             <hr className="border-t border-gray-300" />

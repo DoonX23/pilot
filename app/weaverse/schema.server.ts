@@ -1,4 +1,5 @@
 import type { HydrogenThemeSchema, SwatchesConfigs } from "@weaverse/hydrogen";
+import { countries } from "~/data/countries";
 import pkg from "../../package.json";
 
 let swatchesConfigs: SwatchesConfigs = {
@@ -84,6 +85,13 @@ export let themeSchema: HydrogenThemeSchema = {
     documentationUrl: "https://weaverse.io/docs",
     supportUrl: "https://weaverse.io/contact",
   },
+  i18n: Object.values(countries).map((i) => {
+    return {
+      language: i.language,
+      country: i.country,
+      label: i.label,
+    };
+  }),
   inspector: [
     {
       group: "Layout",
@@ -139,7 +147,7 @@ export let themeSchema: HydrogenThemeSchema = {
       ],
     },
     {
-      group: "Announcement bar",
+      group: "Scrolling announcements",
       inputs: [
         {
           type: "richtext",
@@ -150,7 +158,7 @@ export let themeSchema: HydrogenThemeSchema = {
         {
           type: "range",
           label: "Content gap",
-          name: "scrollingGap",
+          name: "topbarScrollingGap",
           configs: {
             min: 0,
             max: 100,
@@ -172,24 +180,16 @@ export let themeSchema: HydrogenThemeSchema = {
           defaultValue: 36,
         },
         {
-          type: "switch",
-          label: "Enable scrolling",
-          name: "enableScrolling",
-          defaultValue: false,
-          helpText:
-            "Scrolling is automatically detected based on the content length.",
-        },
-        {
           type: "range",
           label: "Scrolling speed",
-          name: "scrollingSpeed",
+          name: "topbarScrollingSpeed",
           configs: {
-            min: 0,
-            max: 100,
+            min: 1,
+            max: 20,
             step: 1,
-            unit: "s",
+            unit: "x",
           },
-          defaultValue: 10,
+          defaultValue: 5,
         },
       ],
     },
@@ -197,10 +197,24 @@ export let themeSchema: HydrogenThemeSchema = {
       group: "Header",
       inputs: [
         {
+          type: "select",
+          name: "headerWidth",
+          label: "Header width",
+          configs: {
+            options: [
+              { value: "full", label: "Full page" },
+              { value: "stretch", label: "Stretch" },
+              { value: "fixed", label: "Fixed" },
+            ],
+          },
+          defaultValue: "fixed",
+        },
+        {
           type: "switch",
           label: "Enable transparent header",
           name: "enableTransparentHeader",
           defaultValue: true,
+          helpText: "Header is transparent in home page only.",
         },
         {
           type: "image",
@@ -239,6 +253,22 @@ export let themeSchema: HydrogenThemeSchema = {
           },
           defaultValue: 150,
         },
+        {
+          type: "heading",
+          label: "Menu",
+        },
+        {
+          type: "select",
+          name: "openMenuBy",
+          label: "Open menu by",
+          configs: {
+            options: [
+              { value: "hover", label: "Mouse hover" },
+              { value: "click", label: "Mouse click" },
+            ],
+          },
+          defaultValue: "click",
+        },
       ],
     },
     {
@@ -250,27 +280,39 @@ export let themeSchema: HydrogenThemeSchema = {
         },
         {
           type: "color",
-          label: "Text",
-          name: "colorText",
-          defaultValue: "#0F0F0F",
-        },
-        {
-          type: "color",
           label: "Background",
           name: "colorBackground",
           defaultValue: "#ffffff",
         },
         {
           type: "color",
-          label: "Foreground",
-          name: "colorForeground",
-          defaultValue: "#e5e7eb",
+          label: "Text",
+          name: "colorText",
+          defaultValue: "#0F0F0F",
         },
         {
           type: "color",
-          label: "Lines and borders",
+          label: "Text (subtle)",
+          name: "colorTextSubtle",
+          defaultValue: "#88847F",
+        },
+        {
+          type: "color",
+          label: "Text (inverse)",
+          name: "colorTextInverse",
+          defaultValue: "#fff",
+        },
+        {
+          type: "color",
+          label: "Borders",
           name: "colorLine",
-          defaultValue: "#a8a29e",
+          defaultValue: "#3B352C",
+        },
+        {
+          type: "color",
+          label: "Borders (subtle)",
+          name: "colorLineSubtle",
+          defaultValue: "#A19B91",
         },
         {
           type: "heading",
@@ -328,7 +370,7 @@ export let themeSchema: HydrogenThemeSchema = {
         },
         {
           type: "heading",
-          label: "Primary button",
+          label: "Button (primary)",
         },
         {
           type: "color",
@@ -344,7 +386,7 @@ export let themeSchema: HydrogenThemeSchema = {
         },
         {
           type: "heading",
-          label: "Secondary button",
+          label: "Button (secondary)",
         },
         {
           type: "color",
@@ -360,7 +402,7 @@ export let themeSchema: HydrogenThemeSchema = {
         },
         {
           type: "heading",
-          label: "Outline button",
+          label: "Button (outline)",
         },
         {
           type: "color",
@@ -370,47 +412,47 @@ export let themeSchema: HydrogenThemeSchema = {
         },
         {
           type: "heading",
-          label: "Drawers and popovers",
+          label: "Labels / badges / tags",
         },
         {
           type: "color",
-          label: "Background color",
-          name: "drawersBg",
-          defaultValue: "#ffffff",
-        },
-        {
-          type: "heading",
-          label: "Product",
+          label: "Discounts",
+          name: "discountBadge",
+          defaultValue: "#c6512c",
         },
         {
           type: "color",
-          label: "Compare price text",
-          name: "comparePriceTextColor",
-          defaultValue: "#737373",
+          label: "New",
+          name: "newBadge",
+          defaultValue: "#67785d",
         },
         {
           type: "color",
-          label: "Sale tags",
-          name: "saleTagColor",
-          defaultValue: "#dc2626",
-        },
-        {
-          type: "color",
-          label: "New tags",
-          name: "newTagColor",
-          defaultValue: "#4d4d4d",
+          label: "Hot / Best seller",
+          name: "bestSellerBadge",
+          defaultValue: "#000000",
         },
         {
           type: "color",
           label: "Other tags",
-          name: "otherTagColor",
-          defaultValue: "#1e293b",
+          name: "otherBadges",
+          defaultValue: "#000000",
         },
         {
           type: "color",
           label: "Sold out & unavailable",
           name: "soldOutAndUnavailable",
           defaultValue: "#d4d4d4",
+        },
+        {
+          type: "heading",
+          label: "Others",
+        },
+        {
+          type: "color",
+          label: "Compare price text",
+          name: "comparePriceTextColor",
+          defaultValue: "#84807B",
         },
         {
           type: "color",
@@ -506,7 +548,7 @@ export let themeSchema: HydrogenThemeSchema = {
             step: 1,
             unit: "px",
           },
-          defaultValue: 16,
+          defaultValue: 14,
         },
         {
           type: "range",
@@ -539,6 +581,14 @@ export let themeSchema: HydrogenThemeSchema = {
           type: "switch",
           label: "Enable view transition",
           name: "enableViewTransition",
+          defaultValue: true,
+          helpText:
+            'Learn more about how <a href="https://developer.mozilla.org/en-US/docs/Web/API/View_Transitions_API" target="_blank" rel="noreferrer">View Transitions API</a> work.',
+        },
+        {
+          type: "switch",
+          label: "Reveal elements on scroll",
+          name: "revealElementsOnScroll",
           defaultValue: true,
         },
       ],
@@ -638,7 +688,7 @@ export let themeSchema: HydrogenThemeSchema = {
         {
           type: "select",
           name: "footerWidth",
-          label: "Footer content width",
+          label: "Footer width",
           configs: {
             options: [
               { value: "full", label: "Full page" },

@@ -3,19 +3,20 @@ import { Money, ShopPayButton, useOptimisticVariant } from "@shopify/hydrogen";
 import type { MoneyV2 } from "@shopify/hydrogen/storefront-api-types";
 import type { HydrogenComponentSchema } from "@weaverse/hydrogen";
 import { forwardRef, useEffect, useState } from "react";
+import type { ProductQuery } from "storefrontapi.generated";
 import { CompareAtPrice } from "~/components/compare-at-price";
 import { Link } from "~/components/link";
 import { Section, type SectionProps, layoutInputs } from "~/components/section";
-import { getExcerpt, isDiscounted, isNewArrival } from "~/lib/utils";
-import { AddToCartButton } from "~/modules/add-to-cart-button";
+import { isDiscounted, isNewArrival } from "~/lib/utils";
+import { AddToCartButton } from "~/components/product/add-to-cart-button";
 import {
   ProductMedia,
   type ProductMediaProps,
-} from "~/modules/product-form/product-media";
-import { Quantity } from "~/modules/product-form/quantity";
-import { ProductVariants } from "~/modules/product-form/variants";
+} from "~/components/product/product-media";
+import { Quantity } from "~/components/product/quantity";
+import { ProductVariants } from "~/components/product/variants";
 import type { loader as productLoader } from "~/routes/($locale).products.$productHandle";
-import { ProductDetail } from "./product-detail";
+import { ProductDetails } from "./product-details";
 
 interface ProductInformationProps
   extends SectionProps,
@@ -35,7 +36,6 @@ let ProductInformation = forwardRef<HTMLDivElement, ProductInformationProps>(
   (props, ref) => {
     let {
       product,
-      shop,
       variants: _variants,
       storeDomain,
     } = useLoaderData<typeof productLoader>();
@@ -101,8 +101,7 @@ let ProductInformation = forwardRef<HTMLDivElement, ProductInformationProps>(
     }
 
     if (product && variants) {
-      let { title, vendor, summary, description } = product;
-      let { shippingPolicy, refundPolicy } = shop;
+      let { title, vendor, summary } = product;
       let discountedAmount =
         (selectedVariant?.compareAtPrice?.amount || 0) /
           selectedVariant?.price?.amount -
@@ -114,7 +113,7 @@ let ProductInformation = forwardRef<HTMLDivElement, ProductInformationProps>(
           <div className="flex items-center gap-2">
             <Link
               to="/"
-              className="text-body/50 hover:underline underline-offset-4"
+              className="text-body-subtle hover:underline underline-offset-4"
             >
               Home
             </Link>
@@ -138,19 +137,19 @@ let ProductInformation = forwardRef<HTMLDivElement, ProductInformationProps>(
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-sm">
                     {discountedAmount > 0 && discountedAmount < 1 && (
-                      <span className="py-1.5 px-2 text-background bg-[var(--color-sale-tag)] rounded">
+                      <span className="py-1.5 px-2 text-background bg-[--color-discount] rounded">
                         -{Math.round(discountedAmount * 100)}%
                       </span>
                     )}
                     {isNew && (
-                      <span className="py-1.5 px-2 text-background bg-[var(--color-new-tag)] rounded">
+                      <span className="py-1.5 px-2 text-background bg-[--color-new-badge] rounded">
                         NEW ARRIVAL
                       </span>
                     )}
                   </div>
                   <div className="flex flex-col gap-2">
                     {showVendor && vendor && (
-                      <span className="text-body/50">{vendor}</span>
+                      <span className="text-body-subtle">{vendor}</span>
                     )}
                     <h1 className="h3 !tracking-tight">{title}</h1>
                   </div>
@@ -179,7 +178,7 @@ let ProductInformation = forwardRef<HTMLDivElement, ProductInformationProps>(
                     <p className="leading-relaxed">{summary}</p>
                   )}
                   <ProductVariants
-                    product={product}
+                    product={product as ProductQuery["product"]}
                     selectedVariant={selectedVariant}
                     onSelectedVariantChange={handleSelectedVariantChange}
                     variants={variants}
@@ -216,23 +215,10 @@ let ProductInformation = forwardRef<HTMLDivElement, ProductInformationProps>(
                     storeDomain={storeDomain}
                   />
                 )}
-                <div className="grid py-4">
-                  <ProductDetail title="Description" content={description} />
-                  {showShippingPolicy && shippingPolicy?.body && (
-                    <ProductDetail
-                      title="Shipping"
-                      content={getExcerpt(shippingPolicy.body)}
-                      learnMore={`/policies/${shippingPolicy.handle}`}
-                    />
-                  )}
-                  {showRefundPolicy && refundPolicy?.body && (
-                    <ProductDetail
-                      title="Returns"
-                      content={getExcerpt(refundPolicy.body)}
-                      learnMore={`/policies/${refundPolicy.handle}`}
-                    />
-                  )}
-                </div>
+                <ProductDetails
+                  showShippingPolicy={showShippingPolicy}
+                  showRefundPolicy={showRefundPolicy}
+                />
               </div>
             </div>
           </div>

@@ -5,9 +5,9 @@ import type {
 } from "@shopify/hydrogen/storefront-api-types";
 import clsx from "clsx";
 import { useEffect, useId, useMemo } from "react";
+import { ProductCard } from "~/components/product/product-card";
 import { Skeleton } from "~/components/skeleton";
 import { usePrefixPathWithLocale } from "~/lib/utils";
-import { ProductCard } from "./product-card";
 
 interface CartBestSellersProps {
   count: number;
@@ -65,7 +65,7 @@ export function CartBestSellers({
         <CartBestSellersContent
           count={count}
           onClick={onClose}
-          products={data?.products}
+          products={data?.products as Product[]}
         />
       </div>
     </>
@@ -103,11 +103,7 @@ function CartBestSellersContent({
     return <div>No products found.</div>;
   }
 
-  return (
-    <>
-      {products.map((product) => (
-        <ProductCard product={product} key={product.id} />
-      ))}
-    </>
-  );
+  return products.map((product) => (
+    <ProductCard product={product} key={product.id} />
+  ));
 }

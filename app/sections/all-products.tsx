@@ -8,7 +8,7 @@ import { forwardRef } from "react";
 import type { AllProductsQuery } from "storefrontapi.generated";
 import { getImageLoadingPriority } from "~/lib/const";
 import { Grid } from "~/modules/grid";
-import { ProductCard } from "~/modules/product-card";
+import { ProductCard } from "~/components/product/product-card";
 import { PageHeader, Section } from "~/modules/text";
 
 interface AllProductsProps extends HydrogenComponentProps {
@@ -53,13 +53,13 @@ let AllProducts = forwardRef<HTMLElement, AllProductsProps>((props, ref) => {
               return (
                 <>
                   <div className="flex items-center justify-center mt-6">
-                    <PreviousLink className="inline-block rounded font-medium text-center py-3 px-6 border border-line/10 text-body w-full">
+                    <PreviousLink className="inline-block rounded font-medium text-center py-3 px-6 border border-line-subtle text-body w-full">
                       {isLoading ? "Loading..." : prevPageText}
                     </PreviousLink>
                   </div>
                   <Grid data-test="product-grid">{itemsMarkup}</Grid>
                   <div className="flex items-center justify-center mt-6">
-                    <NextLink className="inline-block rounded font-medium text-center py-3 px-6 border border-line/10 text-body w-full">
+                    <NextLink className="inline-block rounded font-medium text-center py-3 px-6 border border-line-subtle text-body w-full">
                       {isLoading ? "Loading..." : nextPageText}
                     </NextLink>
                   </div>
